@@ -43,21 +43,42 @@ public class Xat extends AppCompatActivity {
 
         resultats.add("Que tal?");
         resultats.add("Bé");
-        updateChat();
+
+        loadPrevMsg();
     }
 
-    public void updateChat() {
+    public void sendMsg(View v){
+        String content = String.valueOf(usuari.getText()) + ": " + String.valueOf(msg.getText());
+        Log.i("MSG", content);
+        updateChat(content);
+        msg.setText("");
+    }
+
+    public void updateChat(String msg) {
+        resultats.add(msg);
+
         ArrayAdapter<String> itemsAdapter =
                 new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, resultats);
 
         ListView listView = (ListView) findViewById(R.id.lvXat);
         listView.setAdapter(itemsAdapter);
+        listView.smoothScrollToPosition(itemsAdapter.getCount());
+    }
+
+    public void loadPrevMsg(){
+        //RECOGER DE SQLITE EL LISTADO DE MENSAJES
+        //ARREGLAR EL BLOQUE DE MENSAJES EN MENSAJES SEPARADOS
+        //AÑADIR LOS MENSAJES EN EL ARRAY resultats
+
+        ArrayAdapter<String> itemsAdapter =
+                new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, resultats);
+
+        ListView listView = (ListView) findViewById(R.id.lvXat);
+        listView.setAdapter(itemsAdapter);
+        listView.smoothScrollToPosition(itemsAdapter.getCount());
     }
 
 
-    public void sendMsg(View v){
-        String content = String.valueOf(usuari.getText()) + "-" + String.valueOf(msg.getText());
-        Log.i("MSG", content);
-    }
+
 
 }
