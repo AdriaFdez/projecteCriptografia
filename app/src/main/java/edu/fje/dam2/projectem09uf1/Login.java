@@ -53,6 +53,7 @@ public class Login extends AppCompatActivity {
 
         if(validUsr){
             Intent intent = new Intent(this, Xat.class);
+            intent.putExtra("usr", usr);
             startActivity(intent);
         }else{
             Snackbar.make(v, "Login incorrecte", Snackbar.LENGTH_LONG).setAction("Action", null).show();
