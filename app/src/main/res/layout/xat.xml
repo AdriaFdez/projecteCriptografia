@@ -6,50 +6,55 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <LinearLayout
+    <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:orientation="vertical"
-        tools:layout_editor_absoluteX="84dp"
-        tools:layout_editor_absoluteY="136dp">
+        android:orientation="vertical" >
 
-        <ListView
-            android:id="@+id/lvXat"
-            android:layout_width="match_parent"
-            android:layout_height="512dp"
-            android:stackFromBottom="true"/>
-
-        <LinearLayout
+    <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:orientation="horizontal">
+            android:orientation="vertical">
 
-            <TextView
-                android:id="@+id/tvUsr"
-                android:layout_width="wrap_content"
+            <ListView
+                android:id="@+id/lvXat"
+                android:layout_width="match_parent"
+                android:layout_height="512dp"
+                android:stackFromBottom="true" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:gravity="center"
-                android:text="TextView"
-                android:textColor="@color/black"/>
+                android:orientation="horizontal">
 
-            <EditText
-                android:id="@+id/etMsg"
-                android:layout_width="wrap_content"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:ems="10"
-                android:hint="Missatge..."
-                android:inputType="textPersonName" />
+                <TextView
+                    android:id="@+id/tvUsr"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:text="TextView"
+                    android:textColor="@color/black" />
 
-            <com.google.android.material.floatingactionbutton.FloatingActionButton
-                android:id="@+id/floatingActionButton"
-                android:layout_width="wrap_content"
-                android:layout_height="94dp"
-                android:layout_gravity="center"
-                android:clickable="true"
-                android:onClick="sendMsg"
-                app:srcCompat="@android:drawable/ic_menu_send" />
+                <EditText
+                    android:id="@+id/etMsg"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:ems="10"
+                    android:hint="Missatge..."
+                    android:inputType="textPersonName" />
+
+                <com.google.android.material.floatingactionbutton.FloatingActionButton
+                    android:id="@+id/floatingActionButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="94dp"
+                    android:layout_gravity="center"
+                    android:clickable="true"
+                    android:onClick="sendMsg"
+                    app:srcCompat="@android:drawable/ic_menu_send" />
+            </LinearLayout>
         </LinearLayout>
-    </LinearLayout>
+    </RelativeLayout>
+
 </androidx.constraintlayout.widget.ConstraintLayout>
