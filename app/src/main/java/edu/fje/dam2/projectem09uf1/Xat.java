@@ -107,7 +107,16 @@ public class Xat extends AppCompatActivity {
             byte[] encrMsg = encrypt(String.valueOf(msg.getText()));
             Log.i("uwue", new String(encrMsg));
 
-            String content = String.valueOf(usuari.getText()) + ": " + new String(encrMsg);
+            String inicial = "";
+
+            if(String.valueOf(usuari.getText()).equals("David")){
+                inicial = "D";
+            }
+            if(String.valueOf(usuari.getText()).equals("Adria")){
+                inicial = "A";
+            }
+
+            String content = inicial + ": " + new String(encrMsg);
             String topic = "/projecteM09UF3";
             byte[] encodedPayload = new byte[0];
             try {
@@ -122,8 +131,29 @@ public class Xat extends AppCompatActivity {
     }
 
     public void updateChat(String msg) {
-        resultats.add(msg);
-        //ERROR AL DESENCRIPTAR PQ LE LLEGA "David: MSG-ENCRIPTADO"    hay que quitar el "David: "
+
+        String realmsg = msg.substring(3);
+        String msgInitial = msg.substring(0,1);
+        String msgName = "";
+
+        if(msgInitial.equals("D")){
+            msgName = "David: ";
+        }
+        if(msgInitial.equals("A")){
+            msgName = "Adria: ";
+        }
+
+        byte[] decrMsg = decrypt(realmsg);
+        System.out.println(new String(decrMsg));
+
+        String msgFinal = msgName + new String(decrMsg);
+
+
+        resultats.add(msgFinal);
+        Log.i("uwud",msgFinal);
+
+
+
         ArrayAdapter<String> itemsAdapter =
                 new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, resultats);
 
@@ -180,12 +210,13 @@ public class Xat extends AppCompatActivity {
         return encryptedMessage;
     }
 
-    public static byte[] decrypt(byte[] encryptedMessage) {
+    public static byte[] decrypt(String encryptedMessage) {
         byte[] dencryptedMessage = null;
 
         try {
+            byte[] message = encryptedMessage.getBytes();
             cipher.init(Cipher.DECRYPT_MODE, desKey);
-            dencryptedMessage = cipher.doFinal(encryptedMessage);
+            dencryptedMessage = cipher.doFinal(message);
         }catch (Exception e2) {}
 
         return dencryptedMessage;
