@@ -26,15 +26,22 @@ import org.eclipse.paho.client.mqttv3.MqttMessage;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 
+import javax.crypto.Cipher;
+import javax.crypto.KeyGenerator;
+import javax.crypto.SecretKey;
+
 
 public class Xat extends AppCompatActivity {
+
+    private static KeyGenerator keygenerator = null;
+    private static SecretKey desKey = null;
+    private static Cipher cipher = null;
 
     private TextView usuari;
     private EditText msg;
     private FloatingActionButton btSend;
 
     private ArrayList<String> resultats;
-    private ListView lvRanking;
 
     String clientId = MqttClient.generateClientId();
     MqttAndroidClient client =
@@ -47,6 +54,13 @@ public class Xat extends AppCompatActivity {
         Intent intent = getIntent();
         String usr = intent.getStringExtra("usr");
         setContentView(R.layout.xat);
+
+        try {
+            keygenerator = KeyGenerator.getInstance("DES");
+            desKey = keygenerator.generateKey();
+
+            cipher = Cipher.getInstance("DES");
+        }catch(Exception e) {}
 
         usuari = (TextView) findViewById(R.id.tvUsr);
         msg = (EditText) findViewById(R.id.etMsg);
@@ -86,22 +100,30 @@ public class Xat extends AppCompatActivity {
     }
 
     public void sendMsg(View v){
-        String content = String.valueOf(usuari.getText()) + ": " + String.valueOf(msg.getText());
-        String topic = "/projecteM09UF3";
-        byte[] encodedPayload = new byte[0];
-        try {
-            encodedPayload = content.getBytes("UTF-8");
-            MqttMessage message = new MqttMessage(encodedPayload);
-            client.publish(topic, message);
-        } catch (UnsupportedEncodingException | MqttException e) {
-            e.printStackTrace();
+        if(String.valueOf(msg.getText()).length() != 0){
+            Log.i("uwu", String.valueOf(msg.getText()));
+
+            //encrypt message
+            byte[] encrMsg = encrypt(String.valueOf(msg.getText()));
+            Log.i("uwue", new String(encrMsg));
+
+            String content = String.valueOf(usuari.getText()) + ": " + new String(encrMsg);
+            String topic = "/projecteM09UF3";
+            byte[] encodedPayload = new byte[0];
+            try {
+                encodedPayload = content.getBytes("UTF-8");
+                MqttMessage message = new MqttMessage(encodedPayload);
+                client.publish(topic, message);
+            } catch (UnsupportedEncodingException | MqttException e) {
+                e.printStackTrace();
+            }
+            msg.setText("");
         }
-        msg.setText("");
     }
 
     public void updateChat(String msg) {
         resultats.add(msg);
-
+        //ERROR AL DESENCRIPTAR PQ LE LLEGA "David: MSG-ENCRIPTADO"    hay que quitar el "David: "
         ArrayAdapter<String> itemsAdapter =
                 new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, resultats);
 
@@ -144,6 +166,32 @@ public class Xat extends AppCompatActivity {
             }
         });
     }
+
+
+    public static byte[] encrypt(String missatge) {
+        byte[] encryptedMessage = null;
+
+        try {
+            byte[] message = missatge.getBytes();
+            cipher.init(Cipher.ENCRYPT_MODE, desKey);
+            encryptedMessage = cipher.doFinal(message);
+        }catch (Exception e2) {}
+
+        return encryptedMessage;
+    }
+
+    public static byte[] decrypt(byte[] encryptedMessage) {
+        byte[] dencryptedMessage = null;
+
+        try {
+            cipher.init(Cipher.DECRYPT_MODE, desKey);
+            dencryptedMessage = cipher.doFinal(encryptedMessage);
+        }catch (Exception e2) {}
+
+        return dencryptedMessage;
+    }
+
+
 
 }
 
