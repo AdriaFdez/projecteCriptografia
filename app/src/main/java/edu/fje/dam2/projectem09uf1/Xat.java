@@ -122,6 +122,12 @@ public class Xat extends AppCompatActivity {
             byte[] encrMsg = encryptDataAs(String.valueOf(usuari.getText()) + ": " +String.valueOf(msg.getText()), keyPair.getPrivate());
 
             String topic = "/projecteM09UF3";
+            byte[] pKey = keyPair.getPublic().getEncoded();
+
+            try {
+                MqttMessage message = new MqttMessage(pKey);
+                client.publish(topic, message);
+            }catch (Exception e){ }
 
             try {
                 MqttMessage message = new MqttMessage(encrMsg);
@@ -175,13 +181,6 @@ public class Xat extends AppCompatActivity {
     public void subscribe() throws MqttException, UnsupportedEncodingException {
         String topic = "/projecteM09UF3";
         client.subscribe(topic, 0);
-
-        byte[] pKey = keyPair.getPublic().getEncoded();
-
-        try {
-            MqttMessage message = new MqttMessage(pKey);
-            client.publish(topic, message);
-        }catch (Exception e){ }
 
         client.setCallback(new MqttCallback() {
             @Override
