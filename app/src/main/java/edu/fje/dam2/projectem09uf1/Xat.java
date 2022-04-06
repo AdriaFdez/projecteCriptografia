@@ -119,16 +119,9 @@ public class Xat extends AppCompatActivity {
 
             //encrypt message
             //byte[] encrMsg = encryptA(String.valueOf(msg.getText()));
-            byte[] encrMsg = encryptDataAs(String.valueOf(usuari.getText()) + ": " +String.valueOf(msg.getText()), keyPair.getPrivate());
+            byte[] encrMsg = encryptDataAs(String.valueOf(usuari.getText()) + ": " +String.valueOf(msg.getText()), publicKey);
 
             String topic = "/projecteM09UF3";
-            byte[] pKey = keyPair.getPublic().getEncoded();
-
-            try {
-                MqttMessage message = new MqttMessage(pKey);
-                client.publish(topic, message);
-            }catch (Exception e){ }
-
             try {
                 MqttMessage message = new MqttMessage(encrMsg);
                 client.publish(topic, message);
@@ -136,30 +129,58 @@ public class Xat extends AppCompatActivity {
             } catch (MqttException e) {
                 e.printStackTrace();
             }
-            msg.setText("");
-        }
-    }
 
-    public void updateChat(byte[] message) throws NoSuchAlgorithmException, InvalidKeySpecException {
-
-        if(message.length != 256){
-            Log.i("Connexio", "Tipus Key");
-            publicKey = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(message));
-        }else {
-            Log.i("Connexio", "Tipus Missatge");
-            byte[] decrMsg = decryptDataAs(message, publicKey);
-
-            String msgFinal = new String(decrMsg);
-
-            resultats.add(msgFinal);
-            Log.i("MSG REBUT", msgFinal);
-
+            resultats.add(String.valueOf(usuari.getText()) + ": " +String.valueOf(msg.getText()));
             ArrayAdapter<String> itemsAdapter =
                     new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, resultats);
 
             ListView listView = (ListView) findViewById(R.id.lvXat);
             listView.setAdapter(itemsAdapter);
             listView.smoothScrollToPosition(itemsAdapter.getCount());
+
+            msg.setText("");
+        }
+    }
+
+    public void updateChat(String topic, byte[] message) throws NoSuchAlgorithmException, InvalidKeySpecException, MqttException {
+        byte[] pKey = keyPair.getPublic().getEncoded();
+        MqttMessage messageN = new MqttMessage(pKey);
+
+        if(message.length != 256){
+            if(topic.equals("/projecteM09UF3/pkAdria")){
+                if(publicKey == null){
+                    Log.i("Connexio", "Tipus Key");
+                    publicKey = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(message));
+                }else{
+                    client.publish("/projecteM09UF3/pkDavid", messageN);
+
+                }
+            }else{
+                if(publicKey == null){
+                    Log.i("Connexio", "Tipus Key");
+                    publicKey = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(message));
+                }else {
+                    client.publish("/projecteM09UF3/pkAdria", messageN);
+                }
+            }
+
+        }else {
+            Log.i("Connexio", "Tipus Missatge");
+
+            byte[] decrMsg = decryptDataAs(message, keyPair.getPrivate());
+
+            String msgFinal = new String(decrMsg);
+
+            if(!msgFinal.equals("ERROR")) {
+                resultats.add(msgFinal);
+                Log.i("MSG REBUT", msgFinal);
+                ArrayAdapter<String> itemsAdapter =
+                        new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, resultats);
+
+                ListView listView = (ListView) findViewById(R.id.lvXat);
+                listView.setAdapter(itemsAdapter);
+                listView.smoothScrollToPosition(itemsAdapter.getCount());
+            }
         }
 
     }
@@ -181,7 +202,16 @@ public class Xat extends AppCompatActivity {
     public void subscribe() throws MqttException, UnsupportedEncodingException {
         String topic = "/projecteM09UF3";
         client.subscribe(topic, 0);
+        byte[] pKey = keyPair.getPublic().getEncoded();
+        MqttMessage message = new MqttMessage(pKey);
 
+        if(usuari.getText().equals("David")){
+            client.subscribe("/projecteM09UF3/pkAdria",0);
+            client.publish("/projecteM09UF3/pkDavid", message);
+        }else{
+            client.subscribe("/projecteM09UF3/pkDavid", 0);
+            client.publish("/projecteM09UF3/pkAdria", message);
+        }
         client.setCallback(new MqttCallback() {
             @Override
             public void connectionLost(Throwable cause) {
@@ -190,7 +220,7 @@ public class Xat extends AppCompatActivity {
 
             @Override
             public void messageArrived(String topic, MqttMessage message) throws Exception {
-                updateChat(message.getPayload());
+                updateChat(topic,message.getPayload());
             }
 
             @Override
@@ -237,12 +267,12 @@ public class Xat extends AppCompatActivity {
         return keys;
     }
 
-    public byte[] encryptDataAs(String missatge, PrivateKey priv) {
+    public byte[] encryptDataAs(String missatge, PublicKey pb) {
         byte[] encryptedData = new byte[0];
         try {
             byte[] msg = missatge.getBytes();
             Cipher ciphera = Cipher.getInstance("RSA/ECB/PKCS1Padding");
-            ciphera.init(Cipher.ENCRYPT_MODE, priv);
+            ciphera.init(Cipher.ENCRYPT_MODE, pb);
             encryptedData = ciphera.doFinal(msg);
             Log.i("DEC", String.valueOf(encryptedData.length));
         } catch (Exception ex) {
@@ -251,15 +281,20 @@ public class Xat extends AppCompatActivity {
         return encryptedData;
     }
 
-    public byte[] decryptDataAs(byte[] missatge, PublicKey pub) {
+    public byte[] decryptDataAs(byte[] missatge, PrivateKey prv) {
+        boolean er = false;
         byte[] encryptedData = new byte[0];
         try {
             Log.i("DEC", String.valueOf(missatge.length));
             Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
-            cipher.init(Cipher.DECRYPT_MODE, pub);
+            cipher.init(Cipher.DECRYPT_MODE, prv);
             encryptedData = cipher.doFinal(missatge);
         } catch (Exception ex) {
+            er = true;
             System.err.println("Error desxifrant: " + ex);
+        }
+        if(er){
+            encryptedData = "ERROR".getBytes();
         }
         return encryptedData;
     }
