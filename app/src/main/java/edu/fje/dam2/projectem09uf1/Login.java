@@ -7,6 +7,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
+import android.widget.Switch;
 
 import com.google.android.material.snackbar.Snackbar;
 
@@ -26,6 +27,7 @@ public class Login extends AppCompatActivity {
 
     private EditText etPwd, etUsr;
     private Map<String,String> users = new HashMap<>();
+    private Switch switchEncrypt;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -37,6 +39,7 @@ public class Login extends AppCompatActivity {
 
         etUsr = (EditText) findViewById(R.id.etUsr);
         etPwd = (EditText) findViewById(R.id.etPwd);
+        switchEncrypt = (Switch) findViewById(R.id.switchEncrypt);
     }
 
     public void login(View v) {
@@ -60,10 +63,15 @@ public class Login extends AppCompatActivity {
                 }
             }
         }
+        int encrMode = 404;
+        if(switchEncrypt.isChecked()) encrMode = 1;
+        else encrMode = 0;
+
 
         if(validUsr){
             Intent intent = new Intent(this, Xat.class);
             intent.putExtra("usr", usr);
+            intent.putExtra("encrMode", encrMode);
             startActivity(intent);
         }else{
             Snackbar.make(v, "Login incorrecte", Snackbar.LENGTH_LONG).setAction("Action", null).show();
