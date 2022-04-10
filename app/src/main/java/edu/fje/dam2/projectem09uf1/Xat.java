@@ -40,6 +40,7 @@ import java.util.ArrayList;
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 
 
 public class Xat extends AppCompatActivity {
@@ -116,6 +117,21 @@ public class Xat extends AppCompatActivity {
         }
     }
 
+    public void sendEncrKey(View v) {
+        String topic = "/projecteM09UF3/SimK";
+
+        byte[] pKey = desKey.getEncoded();
+
+
+        byte[] encodedPayload = new byte[0];
+        try {
+            MqttMessage messageN = new MqttMessage(pKey);
+            client.publish(topic, messageN);
+        } catch (MqttException e) {
+            e.printStackTrace();
+        }
+    }
+
     public void sendMsg(View v){
         if(encrMode == 0){          //Encriptació Simètrica
             if(String.valueOf(msg.getText()).length() != 0){
@@ -172,19 +188,25 @@ public class Xat extends AppCompatActivity {
 
     public void updateChat(String topic, byte[] message) throws NoSuchAlgorithmException, InvalidKeySpecException, MqttException {
         if(encrMode == 0){          //Encriptació Simètrica
-            byte[] msgDecrypted = decrypt(message);
 
-            System.out.println(msgDecrypted);
-            resultats.add(new String(msgDecrypted));
-            Log.i("uwud",new String(msgDecrypted));
+            if(topic.equals("/projecteM09UF3/SimK")){
+                desKey = new SecretKeySpec(message, "AES");
+            }else{
+                byte[] msgDecrypted = decrypt(message);
+
+                System.out.println(msgDecrypted);
+                resultats.add(new String(msgDecrypted));
+                Log.i("uwud",new String(msgDecrypted));
 
 
-            ArrayAdapter<String> itemsAdapter =
-                    new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, resultats);
+                ArrayAdapter<String> itemsAdapter =
+                        new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, resultats);
 
-            ListView listView = (ListView) findViewById(R.id.lvXat);
-            listView.setAdapter(itemsAdapter);
-            listView.smoothScrollToPosition(itemsAdapter.getCount());
+                ListView listView = (ListView) findViewById(R.id.lvXat);
+                listView.setAdapter(itemsAdapter);
+                listView.smoothScrollToPosition(itemsAdapter.getCount());
+            }
+
         }else if(encrMode == 1) {    //Encriptació Asimètrica
             byte[] pKey = keyPair.getPublic().getEncoded();
             MqttMessage messageN = new MqttMessage(pKey);
@@ -194,15 +216,12 @@ public class Xat extends AppCompatActivity {
                     if(publicKey == null){
                         Log.i("Connexio", "Tipus Key");
                         publicKey = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(message));
-                    }else{
                         client.publish("/projecteM09UF3/pkDavid", messageN);
-
                     }
                 }else if(topic.equals("/projecteM09UF3/pkDavid")){
                     if(publicKey == null){
                         Log.i("Connexio", "Tipus Key");
                         publicKey = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(message));
-                    }else {
                         client.publish("/projecteM09UF3/pkAdria", messageN);
                     }
                 }
@@ -250,6 +269,8 @@ public class Xat extends AppCompatActivity {
         MqttMessage message = new MqttMessage(pKey);
         client.subscribe("/projecteM09UF3/SimMSG",0);
         client.subscribe("/projecteM09UF3/SimK",0);
+
+        //hace falta un unsubscribe? si cambiamos de modo en 1 teléfono, y el otro manda mensajes con los tópics del otro cifraje, los recibirá?
 
         if(usuari.getText().equals("David")){
             client.subscribe("/projecteM09UF3/pkAdria",0);
