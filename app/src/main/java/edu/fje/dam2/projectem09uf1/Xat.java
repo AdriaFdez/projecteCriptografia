@@ -1,6 +1,8 @@
 package edu.fje.dam2.projectem09uf1;
 
 import android.content.Intent;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -36,6 +38,7 @@ import java.security.PublicKey;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
@@ -56,13 +59,18 @@ public class Xat extends AppCompatActivity {
     private EditText msg;
     private FloatingActionButton btSend;
 
-    private ArrayList<String> resultats;
+    private ArrayList<String> resultats = new ArrayList<String>();
+
     private int encrMode = 404;
 
     String clientId = MqttClient.generateClientId();
     MqttAndroidClient client =
             new MqttAndroidClient(this, "tcp://broker.emqx.io:1883",
                     clientId);
+
+
+    private final String BASE_DADES = "xatAndroid";
+    private final String TAULA = "xatProjecte";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -85,11 +93,6 @@ public class Xat extends AppCompatActivity {
         btSend = (FloatingActionButton) findViewById(R.id.floatingActionButton);
 
         usuari.setText(usr);
-
-        resultats = new ArrayList<String>();
-
-        resultats.add("Que tal?");
-        resultats.add("Bé");
 
         loadPrevMsg();
 
@@ -249,9 +252,53 @@ public class Xat extends AppCompatActivity {
     }
 
     public void loadPrevMsg(){
-        //RECOGER DE SQLITE EL LISTADO DE MENSAJES
-        //ARREGLAR EL BLOQUE DE MENSAJES EN MENSAJES SEPARADOS
-        //AÑADIR LOS MENSAJES EN EL ARRAY resultats
+        SQLiteDatabase baseDades = null;
+        try {
+            baseDades = this.openOrCreateDatabase(BASE_DADES, MODE_PRIVATE, null);
+
+            baseDades.execSQL("CREATE TABLE IF NOT EXISTS "
+                    + TAULA
+                    + " (id INT(1), pKey VARCHAR, xat VARCHAR);");
+
+            Cursor c = baseDades.rawQuery("SELECT id, pKey, xat"
+                            + " FROM " + TAULA,
+                    null);
+
+            int columnaId = c.getColumnIndex("id");
+            String columnaDuradaPartida = c.getColumnName(1);
+            String columnaDataPartida = c.getColumnName(2);
+
+            if (c != null) {
+
+                if (c.isBeforeFirst()) {
+                    c.moveToFirst();
+                    int i = 0;
+
+                    do {
+                        i++;
+                        int punts;
+                        String pKey = null;
+                        String xat = null;
+                        try {
+                            punts = c.getInt(columnaId);
+                            pKey = c.getString(1);
+                            xat = c.getString(2);
+                        }catch(Exception e){
+                            punts = 0;
+                            xat = "Inicia la conversació";
+                        }
+
+                    String xatOb[] = xat.split("%%%") ;
+                    resultats = new ArrayList<String>(Arrays.asList(xatOb));
+                    } while (c.moveToNext());
+                }
+            }
+
+        } finally {
+            if (baseDades != null) {
+                baseDades.close();
+            }
+        }
 
         //resultats.add(msgFinal);
         ArrayAdapter<String> itemsAdapter =
@@ -365,6 +412,28 @@ public class Xat extends AppCompatActivity {
         return encryptedData;
     }
 
+    @Override
+    protected void onStop() {
+        super.onStop();
+
+        String xat = String.join("%%%", resultats);
+
+        SQLiteDatabase baseDades = null;
+        try {
+
+            baseDades = this.openOrCreateDatabase(BASE_DADES, MODE_PRIVATE, null);
+
+            baseDades.execSQL("INSERT OR REPLACE INTO "
+                    + TAULA
+                    + " (id, pKey, xat)"
+                    + " VALUES (" + 1 + ", 'f', '" + xat +"');");
+
+        } finally {
+            if (baseDades != null) {
+                baseDades.close();
+            }
+        }
+    }
 
 }
 
