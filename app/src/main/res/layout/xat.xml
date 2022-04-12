@@ -1,4 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/coordinator"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
 <androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -11,7 +17,7 @@
         android:layout_height="match_parent"
         android:orientation="vertical" >
 
-    <LinearLayout
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:orientation="vertical">
@@ -36,19 +42,28 @@
                     <Button
                         android:id="@+id/button"
                         android:layout_width="match_parent"
-                        android:layout_height="99dp"
+                        android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:onClick="sendEncrKey"
-                        android:text="Req Key" />
+                        android:text="Key" />
 
                     <TextView
                         android:id="@+id/tvUsr"
                         android:layout_width="wrap_content"
-                        android:layout_height="match_parent"
+                        android:layout_height="104dp"
+                        android:layout_gravity="center"
                         android:layout_weight="1"
                         android:gravity="center"
                         android:text="TextView"
                         android:textColor="@color/black" />
+
+                    <Button
+                        android:id="@+id/btSendSign"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:onClick="sendSign"
+                        android:text="sign" />
                 </LinearLayout>
 
                 <EditText
@@ -73,3 +88,4 @@
     </RelativeLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

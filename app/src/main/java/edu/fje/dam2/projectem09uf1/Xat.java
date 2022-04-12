@@ -13,8 +13,10 @@ import android.widget.ListView;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.coordinatorlayout.widget.CoordinatorLayout;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.android.material.snackbar.Snackbar;
 
 import org.eclipse.paho.android.service.MqttAndroidClient;
 import org.eclipse.paho.client.mqttv3.IMqttActionListener;
@@ -35,6 +37,7 @@ import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.Signature;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
@@ -48,6 +51,7 @@ import javax.crypto.spec.SecretKeySpec;
 
 public class Xat extends AppCompatActivity {
 
+    private CoordinatorLayout coordinatorLayout;
     private static KeyGenerator keygenerator = null;
     private static SecretKey desKey = null;
     private static Cipher cipher = null;
@@ -62,6 +66,9 @@ public class Xat extends AppCompatActivity {
     private ArrayList<String> resultats = new ArrayList<String>();
 
     private int encrMode = 404;
+    private byte[] firmaDades = null;
+    private byte[] firmaFirma = null;
+    private PublicKey firmaPbKey = null;
 
     String clientId = MqttClient.generateClientId();
     MqttAndroidClient client =
@@ -79,6 +86,7 @@ public class Xat extends AppCompatActivity {
         String usr = intent.getStringExtra("usr");
         encrMode = intent.getIntExtra("encrMode",404);
         setContentView(R.layout.xat);
+        coordinatorLayout = (CoordinatorLayout) findViewById(R.id.coordinator);
 
         try {
             keygenerator = KeyGenerator.getInstance("DES");
@@ -130,6 +138,30 @@ public class Xat extends AppCompatActivity {
         try {
             MqttMessage messageN = new MqttMessage(pKey);
             client.publish(topic, messageN);
+        } catch (MqttException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void sendSign(View v){
+        PrivateKey pvk = keyPair.getPrivate();
+        PublicKey pbk = keyPair.getPublic();
+        String msg = "Exemple FIRMA";
+        byte[] message = msg.getBytes();
+        byte[] signature = signData(message, pvk);
+
+        try {
+            String topic = "/projecteM09UF3/Firma/dades";
+            MqttMessage mqttMessage = new MqttMessage(message);
+            client.publish(topic, mqttMessage);
+
+            topic = "/projecteM09UF3/Firma/firma";
+            mqttMessage = new MqttMessage(signature);
+            client.publish(topic, mqttMessage);
+
+            topic = "/projecteM09UF3/Firma/key";
+            mqttMessage = new MqttMessage(pbk.getEncoded());
+            client.publish(topic, mqttMessage);
         } catch (MqttException e) {
             e.printStackTrace();
         }
@@ -190,8 +222,20 @@ public class Xat extends AppCompatActivity {
     }
 
     public void updateChat(String topic, byte[] message) throws NoSuchAlgorithmException, InvalidKeySpecException, MqttException {
-        if(encrMode == 0){          //Encriptació Simètrica
-
+        if(topic.equals("/projecteM09UF3/Firma/dades")){
+            firmaDades = message;
+        }else if(topic.equals("/projecteM09UF3/Firma/firma")){
+            firmaFirma = message;
+        }else if(topic.equals("/projecteM09UF3/Firma/key")){
+            firmaPbKey = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(message));
+            if(validateSignature(firmaDades,firmaFirma,firmaPbKey)){
+                Log.i("firma", "CORRECTO");
+                Snackbar.make(coordinatorLayout, String.valueOf("Validació de signatura: CORRECTE"), Snackbar.LENGTH_LONG).setAction("Action", null).show();
+            }else{
+                Snackbar.make(coordinatorLayout, String.valueOf("Validació de signatura: INCORRECTE"), Snackbar.LENGTH_LONG).setAction("Action", null).show();
+                Log.i("firma", "INCORRECTO");
+            }
+        }else if(encrMode == 0){          //Encriptació Simètrica
             if(topic.equals("/projecteM09UF3/SimK")){
                 desKey = new SecretKeySpec(message, "AES");
             }else{
@@ -285,7 +329,7 @@ public class Xat extends AppCompatActivity {
                             xat = c.getString(2);
                         }catch(Exception e){
                             punts = 0;
-                            xat = "Inicia la conversació";
+                            xat = "Inicia la conversa";
                         }
 
                     String xatOb[] = xat.split("%%%") ;
@@ -316,6 +360,9 @@ public class Xat extends AppCompatActivity {
         MqttMessage message = new MqttMessage(pKey);
         client.subscribe("/projecteM09UF3/SimMSG",0);
         client.subscribe("/projecteM09UF3/SimK",0);
+        client.subscribe("/projecteM09UF3/Firma/dades",0);
+        client.subscribe("/projecteM09UF3/Firma/firma",0);
+        client.subscribe("/projecteM09UF3/Firma/key",0);
 
         //hace falta un unsubscribe? si cambiamos de modo en 1 teléfono, y el otro manda mensajes con los tópics del otro cifraje, los recibirá?
 
@@ -433,6 +480,33 @@ public class Xat extends AppCompatActivity {
                 baseDades.close();
             }
         }
+    }
+
+    //SIGNATURE
+    public static byte[] signData(byte[] data, PrivateKey priv) {
+        byte[] signature = null;
+        try {
+            Signature signer = Signature.getInstance("SHA1withRSA");
+            signer.initSign(priv);
+            signer.update(data);
+            signature = signer.sign();
+        } catch (Exception ex) {
+            System.err.println("Error signant les dades: " + ex);
+        }
+        return signature;
+    }
+
+    public static boolean validateSignature(byte[] data, byte[] signature, PublicKey pub) {
+        boolean isValid = false;
+        try {
+            Signature signer = Signature.getInstance("SHA1withRSA");
+            signer.initVerify(pub);
+            signer.update(data);
+            isValid = signer.verify(signature);
+        } catch (Exception ex) {
+            System.err.println("Error validant les dades: " + ex);
+        }
+        return isValid;
     }
 
 }
