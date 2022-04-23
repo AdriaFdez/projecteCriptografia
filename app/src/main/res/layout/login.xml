@@ -13,7 +13,7 @@
 
         <Space
             android:layout_width="match_parent"
-            android:layout_height="110dp" />
+            android:layout_height="34dp" />
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -25,16 +25,12 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1" />
 
-            <TextView
-                android:id="@+id/textView"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+            <ImageView
+                android:id="@+id/imageView"
+                android:layout_width="198dp"
+                android:layout_height="150dp"
                 android:layout_weight="1"
-                android:textSize="36dp"
-                android:textStyle="bold"
-                android:textColor="@color/black"
-                android:textAlignment="center"
-                android:text="LOGIN" />
+                app:srcCompat="@drawable/crypto" />
 
             <Space
                 android:layout_width="wrap_content"
@@ -44,7 +40,7 @@
 
         <Space
             android:layout_width="match_parent"
-            android:layout_height="36dp" />
+            android:layout_height="24dp" />
 
         <TextView
             android:id="@+id/textView4"
